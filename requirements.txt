@@ -1,0 +1,10 @@
+normality==2.5.0
+followthemoney==3.5.9 # will need to remove probably aftr entity model is substitutedsubstituted
+followthemoney-store[postgresql]==3.1.0
+languagecodes==1.1.1
+tesserocr==2.7.1
+servicelayer[google,amazon]==1.23.2 # will need to remove probably after serviceelayer is substituted
+
+
+# File format support
+Pillow==10.1.0
