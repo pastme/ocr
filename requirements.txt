@@ -11,3 +11,4 @@ Pillow==10.1.0
 
 # service deps
 python-dotenv==1.0.1
+pymupdf==1.21.1
