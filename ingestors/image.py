@@ -64,7 +64,9 @@ class ImageIngestor(Ingestor, OCRSupport, TimestampSupport):
             image = Image.open(BytesIO(data))
             image.load()
             self.extract_exif(image, entity)
-            languages = self.manager.context.get("languages")
+            # temporary disable languages as it needs to be moved out of manager.
+            # languages = self.manager.context.get("languages")
+            languages = None
             text = self.extract_ocr_text(data, languages=languages)
             entity.add("bodyText", text)
         except (OSError, IOError, Exception) as err:

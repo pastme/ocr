@@ -1,2 +1,5 @@
 # IDEA (PyCharm) project settings
 .idea/
+followthemoney.store
+__pycache__
+*.png
