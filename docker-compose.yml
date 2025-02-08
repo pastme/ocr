@@ -1,0 +1,25 @@
+services:
+
+  postgres:
+    image: postgres:10.0
+    environment:
+      POSTGRES_USER: ingest
+      POSTGRES_PASSWORD: ingest
+      POSTGRES_DATABASE: ingest
+
+  ocr:
+    build:
+      context: .
+    hostname: ingest
+    tmpfs:
+      - /tmp:mode=777
+      - /data:mode=777
+    environment:
+      FTM_STORE_URI: postgresql://ingest:ingest@postgres/ingest
+      LOG_FORMAT: TEXT # TEXT or JSON
+    volumes:
+      - "./ingestors:/ingestors/ingestors"
+      - "./data:/ingestors/data"
+      - "./requirements.txt:/ingestors/requirements.txt"
+      - "./main.py:/ingestors/main.py"
+      - "~:/host"

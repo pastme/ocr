@@ -63,14 +63,14 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
     def extract_pages(self, pdf_model: PdfModel, entity, manager):
         entity.schema = model.get("Pages")
         for page_model in pdf_model.pages:
-            page_entity = self.manager.make_entity("Page")
+            page_entity = model.make_entity("Page")
             page_entity.make_id(entity.id, page_model.number)
             page_entity.set("document", entity)
             page_entity.set("index", page_model.number)
             page_entity.add("bodyText", page_model.text)
-            manager.apply_context(page_entity, entity)
-            manager.emit_entity(page_entity)
-            manager.emit_text_fragment(entity, page_model.text, page_entity.id)
+            print([page_entity, entity])
+            print(page_entity)
+            print([entity, page_model.text, page_entity.id])
 
     def parse(self, file_path: str) -> PdfModel:
         """Takes a file_path to a pdf and returns a `PdfModel`"""
@@ -138,7 +138,6 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
         # Attempt to OCR the images and extract text
         # languages = self.manager.context.get("languages")
         languages = None
-
         for image_path in extracted_images:
             with open(image_path, "rb") as fh:
                 data = fh.read()
