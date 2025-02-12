@@ -20,6 +20,7 @@ services:
     volumes:
       - "./ingestors:/ingestors/ingestors"
       - "./data:/ingestors/data"
+      - "./test_files:/ingestors/test_files"
       - "./requirements.txt:/ingestors/requirements.txt"
       - "./main.py:/ingestors/main.py"
       - "~:/host"

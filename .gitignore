@@ -4,3 +4,6 @@ followthemoney.store
 __pycache__
 *.png
 *.pdf
+*.epub
+*.docx
+*.rtf

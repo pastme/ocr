@@ -1,10 +1,6 @@
 FROM python:3.9-bookworm
 ENV DEBIAN_FRONTEND noninteractive
 
-LABEL org.opencontainers.image.title "FollowTheMoney File Ingestors"
-LABEL org.opencontainers.image.licenses MIT
-LABEL org.opencontainers.image.source https://github.com/alephdata/ingest-file
-
 # Enable non-free archive for `unrar`.
 RUN echo "deb http://http.us.debian.org/debian stable non-free" >/etc/apt/sources.list.d/nonfree.list \
   && apt-get -qq -y update \
@@ -132,7 +128,4 @@ ENV ARCHIVE_TYPE=file \
   FTM_STORE_URI=postgresql://aleph:aleph@postgres/aleph \
   REDIS_URL=redis://redis:6379/0 \
   TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata \
-  LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
-
-# USER app
-CMD ingestors process
+  LD_PRELOAD=/lib/x86_64-linux-gnu/libgomp.so.1

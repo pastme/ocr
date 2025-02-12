@@ -1,9 +1,8 @@
-from ingestors.pdf import PDFIngestor
+from ingestors.opendoc import OpenDocumentIngestor
 from followthemoney import model
-import os
 
-pdf_ingestor = PDFIngestor(None)
+doc_ingestor = OpenDocumentIngestor(None)
 schema = model.get("Document")
-file_path = "/host/Documents/pdf_with_images.pdf"
+file_path = "/ingestors/test_files/doc_with_images.docx"
 entity = model.make_entity(schema)
-pdf_ingestor.ingest(file_path, entity)
+doc_ingestor.ingest(file_path, entity)

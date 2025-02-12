@@ -8,6 +8,10 @@ servicelayer[google,amazon]==1.23.2 # will need to remove probably after service
 
 # File format support
 Pillow==10.1.0
+lxml==5.0.0
+olefile==0.47
+odfpy==1.4.1
+
 
 # service deps
 python-dotenv==1.0.1

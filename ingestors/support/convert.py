@@ -39,9 +39,11 @@ class DocumentConvertSupport(CacheSupport, TempFileSupport):
         PDF_CACHE_ACCESSED.labels(status="miss").inc()
         pdf_file = self._document_to_pdf(unique_tmpdir, file_path, entity)
         if pdf_file is not None:
+            """
             content_hash = self.manager.store(pdf_file)
             entity.set("pdfHash", content_hash)
             self.tags.set(key, content_hash)
+            """
         return pdf_file
 
     def _document_to_pdf(
