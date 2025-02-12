@@ -1,7 +1,7 @@
-from ingestors.opendoc import OpenDocumentIngestor
+from ingestors.ooxml import OfficeOpenXMLIngestor
 from followthemoney import model
 
-doc_ingestor = OpenDocumentIngestor(None)
+doc_ingestor = OfficeOpenXMLIngestor(None)
 schema = model.get("Document")
 file_path = "/ingestors/test_files/doc_with_images.docx"
 entity = model.make_entity(schema)
