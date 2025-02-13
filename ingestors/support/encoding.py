@@ -50,7 +50,7 @@ class EncodingSupport(object):
         if not entity.has("encoding"):
             entity.set("encoding", guess_encoding(body))
 
-        for encoding in entity.get("encoding"):
+        for encoding in entity.get("encoding", None):
             try:
                 body = body.decode(encoding)
                 if encoding != self.DEFAULT_ENCODING:

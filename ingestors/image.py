@@ -76,7 +76,7 @@ class ImageIngestor(Ingestor, OCRSupport, TimestampSupport):
     def match(cls, file_path, entity):
         score = super(ImageIngestor, cls).match(file_path, entity)
         if score <= 0:
-            for mime_type in entity.get("mimeType"):
+            for mime_type in entity.get("mimeType", None):
                 if mime_type.startswith("image/"):
                     score = cls.SCORE - 1
         return score

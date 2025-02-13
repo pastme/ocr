@@ -1,8 +1,11 @@
-from ingestors.ooxml import OfficeOpenXMLIngestor
 from followthemoney import model
+from ingestors.manager import Manager
 
-doc_ingestor = OfficeOpenXMLIngestor(None)
-schema = model.get("Document")
-file_path = "/ingestors/test_files/doc_with_images.docx"
-entity = model.make_entity(schema)
-doc_ingestor.ingest(file_path, entity)
+manager = Manager()
+entity = manager.make_entity("Document")
+path = "/host/Documents/doc_with_images.docx"
+manager.ingest(path, entity)
+emitted_entities = list(manager.emitted)
+import pdb;pdb.set_trace()
+print(emitted_entities)
+

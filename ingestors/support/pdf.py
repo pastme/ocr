@@ -63,14 +63,15 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
     def extract_pages(self, pdf_model: PdfModel, entity, manager):
         entity.schema = model.get("Pages")
         for page_model in pdf_model.pages:
-            page_entity = model.make_entity("Page")
+            page_entity = self.manager.make_entity("Page")
             page_entity.make_id(entity.id, page_model.number)
             page_entity.set("document", entity)
             page_entity.set("index", page_model.number)
             page_entity.add("bodyText", page_model.text)
-            print([page_entity, entity])
             print(page_entity)
-            print([entity, page_model.text, page_entity.id])
+            print(entity, page_model.text, page_entity.id)
+            manager.emit_entity(page_entity)
+            manager.emit_text_fragment(entity, page_model.text, page_entity.id)
 
     def parse(self, file_path: str) -> PdfModel:
         """Takes a file_path to a pdf and returns a `PdfModel`"""
@@ -92,10 +93,9 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
         self.extract_pages(pdf_model, entity, manager)
 
     def pdf_alternative_extract(self, entity, pdf_path: str, manager):
-        """
+
         checksum = self.manager.store(pdf_path)
         entity.set("pdfHash", checksum)
-        """
         self.parse_and_ingest(pdf_path, entity, manager)
 
     def pdf_extract_page(

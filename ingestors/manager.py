@@ -3,67 +3,27 @@ import logging
 from timeit import default_timer
 from tempfile import mkdtemp
 from datetime import datetime
-from pkg_resources import get_distribution
-
-from followthemoney import model
 from banal import ensure_list
+from followthemoney import model
 from normality import stringify
 from pantomime import normalize_mimetype
-from ftmstore.utils import safe_fragment
 from servicelayer.archive import init_archive
 from servicelayer.archive.util import ensure_path
-from servicelayer.extensions import get_extensions
-from sentry_sdk import capture_exception
-from servicelayer.cache import get_redis
-from servicelayer.taskqueue import queue_task, get_rabbitmq_channel
-from followthemoney.helpers import entity_filename
-from followthemoney.namespace import Namespace
-from prometheus_client import Counter, Histogram
+from ftmstore.utils import safe_fragment
 
-from ingestors.directory import DirectoryIngestor
+
 from ingestors.exc import ProcessingException, ENCRYPTED_MSG
 from ingestors.util import filter_text, remove_directory
 from ingestors import settings
+from ingestors.pdf import PDFIngestor
+from ingestors.image import ImageIngestor
+from ingestors.djvu import DjVuIngestor
+from ingestors.tiff import TIFFIngestor
+from ingestors.office import DocumentIngestor
+from ingestors.opendoc import OpenDocumentIngestor
+from ingestors.ooxml import OfficeOpenXMLIngestor
 
 log = logging.getLogger(__name__)
-
-INGESTIONS_SUCCEEDED = Counter(
-    "ingestfile_ingestions_succeeded_total",
-    "Successful ingestions",
-    ["ingestor"],
-)
-INGESTIONS_FAILED = Counter(
-    "ingestfile_ingestions_failed_total",
-    "Failed ingestions",
-    ["ingestor"],
-)
-INGESTION_DURATION = Histogram(
-    "ingestfile_ingestion_duration_seconds",
-    "Ingest duration by ingestor",
-    ["ingestor"],
-    # The bucket sizes are a rough guess right now, we might want to adjust
-    # them later based on observed durations
-    buckets=[
-        0.005,
-        0.01,
-        0.025,
-        0.05,
-        0.1,
-        0.25,
-        0.5,
-        1,
-        5,
-        15,
-        60,
-        5 * 60,
-        15 * 60,
-    ],
-)
-INGESTED_BYTES = Counter(
-    "ingestfile_ingested_bytes_total",
-    "Total number of bytes ingested",
-    ["ingestor"],
-)
 
 
 class Manager(object):
@@ -77,16 +37,14 @@ class Manager(object):
 
     MAGIC = magic.Magic(mime=True)
 
-    def __init__(self, dataset, root_task):
-        self.conn = get_redis()
-        self.dataset = dataset
-        self.writer = dataset.bulk()
-        self.root_task = root_task
-        self.collection_id = root_task.collection_id
-        self.context = root_task.context
-        self.ns = Namespace(self.context.get("namespace"))
+    def __init__(self):
         self.work_path = ensure_path(mkdtemp(prefix="ingestor-"))
         self.emitted = set()
+        self.context = {}
+        self.ingestor_classes = [
+            PDFIngestor, ImageIngestor, DjVuIngestor, TIFFIngestor, DocumentIngestor,
+            OpenDocumentIngestor, OfficeOpenXMLIngestor
+        ]
 
     @property
     def archive(self):
@@ -96,7 +54,7 @@ class Manager(object):
 
     def make_entity(self, schema, parent=None):
         schema = model.get(schema)
-        entity = model.make_entity(schema, key_prefix=self.collection_id)
+        entity = model.make_entity(schema)
         self.make_child(parent, entity)
         return entity
 
@@ -107,20 +65,8 @@ class Manager(object):
             child.add("parent", parent.id)
             child.add("ancestors", parent.get("ancestors"))
             child.add("ancestors", parent.id)
-            self.apply_context(child, parent)
-
-    def apply_context(self, entity, source):
-        # Aleph-specific context data:
-        entity.context = {
-            "created_at": source.context.get("created_at"),
-            "updated_at": source.context.get("updated_at"),
-            "role_id": source.context.get("role_id"),
-            "mutable": False,
-        }
 
     def emit_entity(self, entity, fragment=None):
-        entity = self.ns.apply(entity)
-        self.writer.put(entity.to_dict(), fragment)
         self.emitted.add(entity.id)
 
     def emit_text_fragment(self, entity, texts, fragment):
@@ -133,36 +79,22 @@ class Manager(object):
 
     def auction(self, file_path, entity):
         if not entity.has("mimeType"):
-            if file_path.is_dir():
-                entity.add("mimeType", DirectoryIngestor.MIME_TYPE)
-                return DirectoryIngestor
             entity.add("mimeType", self.MAGIC.from_file(file_path.as_posix()))
 
         if "application/encrypted" in entity.get("mimeType"):
             raise ProcessingException(ENCRYPTED_MSG)
 
         best_score, best_cls = 0, None
-        for cls in get_extensions("ingestors"):
+        for cls in self.ingestor_classes:
             score = cls.match(file_path, entity)
             if score > best_score:
                 best_score = score
                 best_cls = cls
 
+        import pdb;pdb.set_trace()
         if best_cls is None:
             raise ProcessingException("Format not supported")
         return best_cls
-
-    def queue_entity(self, entity):
-        log.debug("Queue: %r", entity)
-        queue_task(
-            get_rabbitmq_channel(),
-            get_redis(),
-            self.collection_id,
-            settings.STAGE_INGEST,
-            self.root_task.job_id,
-            self.context,
-            **entity.to_dict(),
-        )
 
     def store(self, file_path, mime_type=None):
         file_path = ensure_path(file_path)
@@ -175,20 +107,6 @@ class Manager(object):
         return self.archive.load_file(
             content_hash, file_name=file_name, temp_path=self.work_path
         )
-
-    def ingest_entity(self, entity):
-        for content_hash in entity.get("contentHash", quiet=True):
-            file_name = entity_filename(entity)
-            file_path = self.load(content_hash, file_name=file_name)
-            if file_path is None or not file_path.exists():
-                log.warning(
-                    f"Couldn't find file named {file_name} at path {file_path}."
-                    "Skipping ingestion."
-                )
-                continue
-            self.ingest(file_path, entity)
-            return
-        self.finalize(entity)
 
     def ingest(self, file_path, entity, **kwargs):
         """Main execution step of an ingestor."""
@@ -205,7 +123,6 @@ class Manager(object):
         now_string = now.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
         entity.set("processingStatus", self.STATUS_FAILURE)
-        entity.set("processingAgent", get_distribution("ingest").version)
         entity.set("processedAt", now_string)
 
         ingestor_class = None
@@ -220,30 +137,19 @@ class Manager(object):
             self.delegate(ingestor_class, file_path, entity)
             duration = max(0, default_timer() - start_time)
 
-            INGESTIONS_SUCCEEDED.labels(ingestor=ingestor_name).inc()
-            INGESTION_DURATION.labels(ingestor=ingestor_name).observe(duration)
-
-            if file_size is not None:
-                INGESTED_BYTES.labels(ingestor=ingestor_name).inc(file_size)
-
             entity.set("processingStatus", self.STATUS_SUCCESS)
         except ProcessingException as pexc:
             log.exception(f"[{repr(entity)}] Failed to process: {pexc}")
-            INGESTIONS_FAILED.labels(ingestor=ingestor_name).inc()
             entity.set("processingError", stringify(pexc))
-            if settings.SENTRY_CAPTURE_PROCESSING_EXCEPTIONS:
-                capture_exception(pexc)
         finally:
             self.finalize(entity)
 
     def finalize(self, entity):
         self.emit_entity(entity)
-        self.writer.flush()
         remove_directory(self.work_path)
 
     def delegate(self, ingestor_class, file_path, entity):
         ingestor_class(self).ingest(file_path, entity)
 
     def close(self):
-        self.writer.flush()
         remove_directory(self.work_path)
