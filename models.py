@@ -8,6 +8,6 @@ class UploadedFile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filepath = Column(String, nullable=False)
-    metadata = Column(JSONB, nullable=True)
+    file_metadata = Column(JSONB, nullable=True)
     text = Column(JSONB, nullable=True)
     processing_status = Column(String, nullable=False)

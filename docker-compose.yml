@@ -11,6 +11,8 @@ services:
     build:
       context: .
     hostname: ingest
+    ports:
+      - "8000:8000"
     tmpfs:
       - /tmp:mode=777
       - /data:mode=777

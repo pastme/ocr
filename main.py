@@ -58,7 +58,7 @@ def upload_file(
             buffer.write(file.file.read())
 
         # Update the database entry with the file path, and metadata
-        new_file.metadata = {"request_mimetype": content_type}
+        new_file.file_metadata = {"request_mimetype": content_type}
         new_file.filepath = file_location
         db.commit()
         db.refresh(new_file)
