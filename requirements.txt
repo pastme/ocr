@@ -2,11 +2,11 @@ banal==1.0.6
 python-magic==0.4.27
 normality==2.5.0
 pantomime==0.6.1
-followthemoney==3.5.9 # will need to remove probably aftr entity model is substitutedsubstituted
+followthemoney==3.5.9
 followthemoney-store[postgresql]==3.1.0
 languagecodes==1.1.1
 tesserocr==2.7.1
-servicelayer[google,amazon]==1.23.2 # will need to remove probably after serviceelayer is substituted
+servicelayer[google,amazon]==1.23.2
 
 
 # File format support
@@ -14,8 +14,10 @@ Pillow==10.1.0
 lxml==5.0.0
 olefile==0.47
 odfpy==1.4.1
+pymupdf==1.21.1
 
 
 # service deps
 python-dotenv==1.0.1
-pymupdf==1.21.1
+SQLAlchemy==2.0.38
+pydantic==2.10.6
