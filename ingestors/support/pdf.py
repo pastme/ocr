@@ -68,8 +68,6 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
             page_entity.set("document", entity)
             page_entity.set("index", page_model.number)
             page_entity.add("bodyText", page_model.text)
-            print(page_entity)
-            print(entity, page_model.text, page_entity.id)
             manager.emit_entity(page_entity)
             manager.emit_text_fragment(entity, page_model.text, page_entity.id)
 

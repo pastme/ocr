@@ -39,7 +39,7 @@ class Manager(object):
 
     def __init__(self):
         self.work_path = ensure_path(mkdtemp(prefix="ingestor-"))
-        self.emitted = set()
+        self.emitted = {}
         self.context = {}
         self.ingestor_classes = [
             PDFIngestor, ImageIngestor, DjVuIngestor, TIFFIngestor, DocumentIngestor,
@@ -67,7 +67,10 @@ class Manager(object):
             child.add("ancestors", parent.id)
 
     def emit_entity(self, entity, fragment=None):
-        self.emitted.add(entity.id)
+        entity_dict = entity.to_dict()
+        if fragment is not None:
+            entity_dict["fragment"] = fragment
+        self.emitted[entity.id] = entity.to_dict()
 
     def emit_text_fragment(self, entity, texts, fragment):
         texts = [t for t in ensure_list(texts) if filter_text(t)]
@@ -91,7 +94,6 @@ class Manager(object):
                 best_score = score
                 best_cls = cls
 
-        import pdb;pdb.set_trace()
         if best_cls is None:
             raise ProcessingException("Format not supported")
         return best_cls
@@ -119,6 +121,7 @@ class Manager(object):
         if file_size is not None and not entity.has("fileSize"):
             entity.add("fileSize", file_size)
 
+        entity.set("fileName", file_path.name)
         now = datetime.now()
         now_string = now.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
