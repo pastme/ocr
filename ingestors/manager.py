@@ -37,10 +37,12 @@ class Manager(object):
 
     MAGIC = magic.Magic(mime=True)
 
-    def __init__(self):
+    def __init__(self, context=None):
         self.work_path = ensure_path(mkdtemp(prefix="ingestor-"))
         self.emitted = {}
-        self.context = {}
+        if not context:
+            context = {"languages": ["ru"]}
+        self.context = context
         self.ingestor_classes = [
             PDFIngestor, ImageIngestor, DjVuIngestor, TIFFIngestor, DocumentIngestor,
             OpenDocumentIngestor, OfficeOpenXMLIngestor

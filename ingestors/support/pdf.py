@@ -136,8 +136,7 @@ class PDFSupport(DocumentConvertSupport, OCRSupport):
                     extracted_images.append(image_path)
 
         # Attempt to OCR the images and extract text
-        # languages = self.manager.context.get("languages")
-        languages = None
+        languages = self.manager.context.get("languages")
         for image_path in extracted_images:
             with open(image_path, "rb") as fh:
                 data = fh.read()
