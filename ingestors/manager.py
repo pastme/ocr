@@ -30,9 +30,9 @@ class Manager(object):
     """Handles the lifecycle of an ingestor. This can be subclassed to embed it
     into a larger processing framework."""
 
-    #: Indicates that during the processing no errors or failures occured.
+    #: Indicates that during the processing no errors or failures occurred.
     STATUS_SUCCESS = "success"
-    #: Indicates occurance of errors during the processing.
+    #: Indicates occurrence of errors during the processing.
     STATUS_FAILURE = "failure"
 
     MAGIC = magic.Magic(mime=True)
@@ -160,8 +160,10 @@ class Manager(object):
         remove_directory(self.work_path)
 
 
-def ingest_file(path):
-    manager = Manager(context={"languages": ["ru"]})
+def ingest_file(path, language):
+    if not language:
+        language = "ru"
+    manager = Manager(context={"languages": [language]})
     entity = manager.make_entity("Document")
     entity.id = "main_document"
     manager.ingest(path, entity)

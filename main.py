@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
+from fastapi import FastAPI, File, UploadFile, Depends, HTTPException, Form
+from typing import Optional
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -39,7 +40,8 @@ def index():
 @app.post("/upload/", response_model=FileResponse)
 def upload_file(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    language: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
 ):
     try:
         # Create a new database entry to get a unique ID
@@ -51,12 +53,11 @@ def upload_file(
         file_name, file_extension = os.path.splitext(file.filename)
         unique_filename = f"file_{new_file.id}{file_extension}"
         file_location = os.path.join(UPLOAD_DIR, unique_filename)
-        content_type = file.content_type
 
         # Save the file to the filesystem
         with open(file_location, "wb") as buffer:
             buffer.write(file.file.read())
-        ingested_data = ingest_file(file_location)
+        ingested_data = ingest_file(file_location, language)
         # Update the database entry with the file path, and metadata
         new_file.file_metadata = {
             "file_name": file_name,
@@ -75,3 +76,11 @@ def upload_file(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/upload/{upload_id}")
+async def read_item(upload_id: int, db: Session = Depends(get_db)):
+    upload = db.query(UploadedFile).filter(UploadedFile.id == upload_id).first()
+    if upload is None:
+        raise HTTPException(status_code=404, detail="Uploaded file not found")
+    return upload
