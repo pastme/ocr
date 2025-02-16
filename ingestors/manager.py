@@ -158,3 +158,22 @@ class Manager(object):
 
     def close(self):
         remove_directory(self.work_path)
+
+
+def ingest_file(path):
+    manager = Manager(context={"languages": ["ru"]})
+    entity = manager.make_entity("Document")
+    entity.id = "main_document"
+    manager.ingest(path, entity)
+    main_document = manager.emitted.get(entity.id)
+    file_metadata = {
+        "file_size": main_document["properties"].get('fileSize'),
+        'mimeType': main_document["properties"].get('mimeType'),
+    }
+    return {
+        "file_metadata": file_metadata,
+        "status": main_document["properties"].get('processingStatus')[0],
+        "text": [
+            doc["properties"].get('bodyText')[0] for doc in manager.emitted.values() if doc["properties"].get('bodyText')
+        ]
+    }
