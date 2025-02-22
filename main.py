@@ -45,7 +45,7 @@ def upload_file(
 ):
     try:
         # Create a new database entry to get a unique ID
-        new_file = UploadedFile(filepath="")
+        new_file = UploadedFile(filepath="", language=language)
         db.add(new_file)
         db.flush()  # Assigns an ID to new_file without committing
 
@@ -57,14 +57,7 @@ def upload_file(
         # Save the file to the filesystem
         with open(file_location, "wb") as buffer:
             buffer.write(file.file.read())
-        ingested_data = ingest_file(file_location, language)
-        # Update the database entry with the file path, and metadata
-        new_file.file_metadata = {
-            "file_name": file_name,
-            **ingested_data["file_metadata"]
-        }
-        new_file.status = ingested_data["status"]
-        new_file.text = ingested_data["text"]
+
         new_file.filepath = file_location
         db.commit()
         db.refresh(new_file)

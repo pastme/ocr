@@ -10,7 +10,6 @@ services:
   ocr:
     build:
       context: .
-    hostname: ingest
     ports:
       - "8000:8000"
     tmpfs:
@@ -26,3 +25,24 @@ services:
       - "./requirements.txt:/ingestors/requirements.txt"
       - "./main.py:/ingestors/main.py"
       - "~:/host"
+    depends_on:
+      - redis
+      - postgres
+
+  worker:
+    build: .
+    command: python worker.py
+    tmpfs:
+      - /tmp:mode=777
+      - /data:mode=777
+    environment:
+      FTM_STORE_URI: postgresql://ingest:ingest@postgres/ingest
+      LOG_FORMAT: TEXT # TEXT or JSON
+    volumes:
+      - ".:/ingestors"
+    depends_on:
+      - redis
+      - postgres
+
+  redis:
+    image: "redis:alpine"
