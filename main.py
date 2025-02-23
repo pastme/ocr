@@ -7,13 +7,19 @@ from sqlalchemy.orm import Session
 from models import UploadedFile
 from schemas import FileResponse
 from database import SessionLocal, engine, Base
-from ingestors.manager import ingest_file
+from redis import Redis
+from rq import Queue
 
 app = FastAPI()
 
 # Directory to store uploaded files
-UPLOAD_DIR = "uploaded_files"
+UPLOAD_DIR = "/shared_data"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Set up Redis and RQ
+redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+redis_conn = Redis.from_url(redis_url)
+q = Queue('default', connection=redis_conn)
 
 
 # Create tables on startup
@@ -61,7 +67,9 @@ def upload_file(
         new_file.filepath = file_location
         db.commit()
         db.refresh(new_file)
-
+        # Enqueue the row ID for processing
+        q.enqueue('processing.process_metadata', new_file.id)
+        print(new_file.__dict__)
         return new_file
     except SQLAlchemyError as e:
         db.rollback()

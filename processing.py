@@ -23,11 +23,11 @@ def process_metadata(row_id):
     try:
         file_record = session.query(UploadedFile).filter_by(id=row_id).first()
         if file_record:
-            ingested_data = ingest_file(file_record.file_location, file_record.language)
+            ingested_data = ingest_file(file_record.filepath, file_record.language)
             file_record.file_metadata = {
                 **ingested_data["file_metadata"]
             }
-            file_record.status = ingested_data["status"]
+            file_record.processing_status = ingested_data["status"]
             file_record.text = ingested_data["text"]
 
             logger.info(f"Successfully processed row {row_id}.")

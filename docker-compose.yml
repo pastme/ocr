@@ -19,19 +19,15 @@ services:
       FTM_STORE_URI: postgresql://ingest:ingest@postgres/ingest
       LOG_FORMAT: TEXT # TEXT or JSON
     volumes:
-      - "./ingestors:/ingestors/ingestors"
-      - "./data:/ingestors/data"
-      - "./test_files:/ingestors/test_files"
-      - "./requirements.txt:/ingestors/requirements.txt"
-      - "./main.py:/ingestors/main.py"
-      - "~:/host"
+      - ".:/ingestors"
+      - shared_volume:/shared_data
     depends_on:
       - redis
       - postgres
 
   worker:
     build: .
-    command: python worker.py
+    command: rq worker --with-scheduler
     tmpfs:
       - /tmp:mode=777
       - /data:mode=777
@@ -40,9 +36,13 @@ services:
       LOG_FORMAT: TEXT # TEXT or JSON
     volumes:
       - ".:/ingestors"
+      - shared_volume:/shared_data
     depends_on:
       - redis
       - postgres
 
   redis:
     image: "redis:alpine"
+
+volumes:
+  shared_volume:

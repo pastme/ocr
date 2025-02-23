@@ -14,6 +14,6 @@ class FileResponse(BaseModel):
     id: int
     filepath: str
     file_metadata: Optional[Dict[str, Any]]
-    text: List
-    status: str
+    text: Optional[List] = None
+    processing_status: str
 
